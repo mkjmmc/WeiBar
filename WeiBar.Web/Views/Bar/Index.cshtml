@@ -6,25 +6,8 @@
     Layout = "~/Views/Shared/_LayoutApp.cshtml";
     LoginHelper.UserLogin(UserHelper.GetModelByUserID("6c188a35-68c9-45f5-a5df-adfccc357daf"));
 }
-@section head
-{
-    <style>
-        html, body { background-color: #FFFFFF; width: 100%; height: 100%; }
-        body .loadingcontainer { box-shadow: none; color: #fff; text-align: center; background-color: #000; opacity: 0.8; filter: alpha(opacity=80); -webkit-animation-name: none; animation-name: none; border-radius: .5rem; }
-        .loading { width: 2rem; height: 2rem; margin: .5rem; }
-        .messagebar { position: fixed; bottom: 0; left: 0; right: 0; }
-    </style>
-}
 @section scripts
 {
-    <script type="text/javascript" src="http://frame.yingyutalk.com/layer/1.9.3/layer.js"></script>
-    <script>
-        $(function () {
-            layer.config({
-                //extend: ['skin/moon/style.css'] //加载新皮肤
-            });
-        })
-    </script>
     <script type="text/javascript">
 
         var barname = '@Model.Name';
@@ -33,23 +16,12 @@
         });
 
         function connect() {
-            layer.open({
-                type: 1,
-                title: false,
-                closeBtn: 0,
-                shade: [0.000001, "#FFFFFF"],
-                shadeClose: false,
-                skin: 'loadingcontainer',
-                area: ['4rem', '4rem'],
-                content: '<img src="http://wx.yingyutalk.com/weibar/Content/puff.svg" class="loading" alt=""><div class="txt-xl txt-c" id="statusname">Loading...</div>'
-            });
-            $('#statusname').text('正在连接服务器');
+            // todo 显示正在连接服务器
             var address = 'ws://127.0.0.1:8080'; // 'ws://112.124.7.227:8080';
             ws = new WebSocket(address);
             ws.onopen = function(e) {
                 $('#info').text("Server > connection open.");
                 // 注册用户进吧
-                $('#statusname').text('加入房间中');
                 joinroom();
                 //                var msg = document.createElement('div');
                 //                msg.style.color = '#0f0';
@@ -66,11 +38,9 @@
                     switch (obj.action) {
                     case 'joinroomsuccess':
                         $('#info').text("Server > join room success.");
-                        layer.closeAll()
-//                        setTimeout(function (){layer.closeAll()}, 1000);
                         break;
                     case 'joinroom':
-                        $('#message').append('<div><a href="#">' + obj.data.un + '</a>加入了房间</div>');
+                        $('#message').append('<div>' + obj.data.un + '加入了房间</div>');
                         break;
                     case 'newmessage':
                         $('#message').append('<div>' + obj.data.un + ':' + obj.data.msg + '</div>');
@@ -160,14 +130,11 @@
 }
 <div id="info">
 </div>
-<div id="message" class="txt-m">
+<div id="message">
 </div>
-<div class="card-list">
-    <div class="messagebar">
-        <div class="card-table">
-            <div class="card-list-item">
-                <input id="text" type="text" class="card-title p-s txt-m" onkeypress="enter(event);" style="width: 100%; border: none"  />
-            </div>
-        </div>
-    </div>
+<div class="">
+    <input id="text" type="text" onkeypress="enter(event);" style="width: 340px" />
+    &nbsp;&nbsp;
+    <button id="send" onclick="send();">
+        send</button>
 </div>

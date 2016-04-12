@@ -127,7 +127,6 @@
     <Content Include="Content\base.css" />
     <Content Include="Content\cards.css" />
     <Content Include="Content\flexible.js" />
-    <Content Include="Content\puff.svg" />
     <Content Include="Global.asax" />
     <Content Include="Web.config">
       <SubType>Designer</SubType>
