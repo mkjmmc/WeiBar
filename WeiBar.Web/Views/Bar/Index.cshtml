@@ -4,7 +4,7 @@
 @{
     ViewBag.Title = Model.Name;
     Layout = "~/Views/Shared/_LayoutApp.cshtml";
-    LoginHelper.UserLogin(UserHelper.GetModelByUserID("6c188a35-68c9-45f5-a5df-adfccc357daf"));
+    //LoginHelper.UserLogin(UserHelper.GetModelByUserID("6c188a35-68c9-45f5-a5df-adfccc357daf"));
 }
 @section head
 {
@@ -12,11 +12,41 @@
         html, body { background-color: #FFFFFF; width: 100%; height: 100%; }
         body .loadingcontainer { box-shadow: none; color: #fff; text-align: center; background-color: #000; opacity: 0.8; filter: alpha(opacity=80); -webkit-animation-name: none; animation-name: none; border-radius: .5rem; }
         .loading { width: 2rem; height: 2rem; margin: .5rem; }
-        .messagebar { position: fixed; bottom: 0; left: 0; right: 0; }
+        .messagebar { position: absolute; bottom: 0; left: 0; right: 0; height: 1rem; border-top: solid 1px #DEDFE0; border-bottom: solid 1px #DEDFE0; }
+        .chatItemListcontainer { position: absolute; top: 0; bottom: 1rem; left: 0; right: 0; overflow: hidden; z-index: 1; }
+        .chatItemList { position: absolute; z-index: 1; -webkit-tap-highlight-color: rgba(0,0,0,0); width: 100%; -webkit-transform: translateZ(0); -moz-transform: translateZ(0); -ms-transform: translateZ(0); -o-transform: translateZ(0); transform: translateZ(0); -webkit-touch-callout: none; -webkit-user-select: none; -moz-user-select: none; -ms-user-select: none; user-select: none; -webkit-text-size-adjust: none; -moz-text-size-adjust: none; -ms-text-size-adjust: none; -o-text-size-adjust: none; text-size-adjust: none; }
+        .chatItemList { padding-top: .2rem;padding-bottom: .2rem;  }
+        .chatItemList .chatItem { margin: 0 .2rem; line-height: 1.2; font-size: .4rem; word-break: break-all; }
+        #info { position: absolute; top: 0; }
+        
     </style>
 }
 @section scripts
 {
+    @*    <script src="@Url.Content("~/Content/overscroll.js")" type="text/javascript"></script>
+    <script>
+        $(function () {
+            overscroll(document.querySelector('.chatItemListcontainer'));
+        });
+    </script>*@
+    <script src="@Url.Content("~/Content/iscroll.js")" type="text/javascript"></script>
+    <script>
+        $(function () {
+            myScroll = new IScroll('.chatItemListcontainer', { mouseWheel: true });
+        });
+        document.addEventListener('touchmove', function (e) { e.preventDefault(); }, false);
+  </script>
+    <script src="@Url.Content("~/Content/hammer.min.js")" type="text/javascript"></script>
+    <script>
+        $(function () {
+            var mc = new Hammer(document.body);
+            // listen to events...
+            mc.on("panleft panright panup pandown tap press", function (ev) {
+                $('#info').text(ev.type + " gesture detected.");
+                return false;
+            });
+        });
+    </script>
     <script type="text/javascript" src="http://frame.yingyutalk.com/layer/1.9.3/layer.js"></script>
     <script>
         $(function () {
@@ -31,8 +61,8 @@
         $(function() {
             connect();
         });
-
         function connect() {
+            layer.closeAll();
             layer.open({
                 type: 1,
                 title: false,
@@ -41,15 +71,15 @@
                 shadeClose: false,
                 skin: 'loadingcontainer',
                 area: ['4rem', '4rem'],
-                content: '<img src="http://wx.yingyutalk.com/weibar/Content/puff.svg" class="loading" alt=""><div class="txt-xl txt-c" id="statusname">Loading...</div>'
+                content: $('#info-dialog')
             });
-            $('#statusname').text('正在连接服务器');
-            var address = 'ws://127.0.0.1:8080'; // 'ws://112.124.7.227:8080';
+            $('#info-text').text('正在连接服务器');
+            var address = 'ws://112.124.7.227:8080';
             ws = new WebSocket(address);
             ws.onopen = function(e) {
                 $('#info').text("Server > connection open.");
                 // 注册用户进吧
-                $('#statusname').text('加入房间中');
+                $('#info-text').text('加入房间中');
                 joinroom();
                 //                var msg = document.createElement('div');
                 //                msg.style.color = '#0f0';
@@ -66,21 +96,23 @@
                     switch (obj.action) {
                     case 'joinroomsuccess':
                         $('#info').text("Server > join room success.");
-                        layer.closeAll()
+                        layer.closeAll();
 //                        setTimeout(function (){layer.closeAll()}, 1000);
                         break;
                     case 'joinroom':
-                        $('#message').append('<div><a href="#">' + obj.data.un + '</a>加入了房间</div>');
+                        $('#message').append('<div class="chatItem"><a href="#">' + obj.data.un + '</a>加入了房间</div>');
                         break;
                     case 'newmessage':
-                        $('#message').append('<div>' + obj.data.un + ':' + obj.data.msg + '</div>');
+                        $('#message').append('<div class="chatItem"><a href="#">' + obj.data.un + '</a>:' + obj.data.msg + '</div>');
                         break;
                     default:
                         break;
                     }
-                    if (obj.bar == '@Model.ID') {
-                        $('#message').append('<div>' + obj.un + ':' + obj.msg + '</div>');
-                    }
+//                    $('.chatItemListcontainer').animate({ scrollTop: $('#message').height() }, 300);
+                    setTimeout(function() {
+                        myScroll.refresh();
+                        myScroll.scrollToElement($('.chatItem:last')[0], 500, null, null, IScroll.utils.ease.circular);
+                    }, 0);
                 }
                 //                var msg = document.createElement('div');
                 //                msg.style.color = '#fff';
@@ -89,13 +121,17 @@
             };
             ws.onerror = function(e) {
                 $('#info').text('Server > ' + e.data);
-                //                var msg = document.createElement('div');
+//                $('#info-text').text('连接中断，正在重试');
+//                setTimeout(connect, 1000);
+//                //                var msg = document.createElement('div');
                 //                msg.style.color = '#0f0';
                 //                msg.innerHTML = 'Server > ' + e.data;
                 //                msgContainer.appendChild(msg);
             };
             ws.onclose = function(e) {
                 $('#info').text("Server > connection closed by server.");
+                $('#info-text').text('连接中断，正在重试');
+                setTimeout(connect, 3000);
                 //                alert('connection closed by server.');
                 //                var msg = document.createElement('div');
                 //                msg.style.color = '#0f0';
@@ -158,16 +194,25 @@
         }
     </script>
 }
-<div id="info">
-</div>
-<div id="message" class="txt-m">
-</div>
 <div class="card-list">
+    <div id="info">
+    </div>
+    <div class="chatItemListcontainer">
+            <div id="message" class="chatItemList">
+            </div>
+    </div>
     <div class="messagebar">
-        <div class="card-table">
+        <div class="card-list">
             <div class="card-list-item">
-                <input id="text" type="text" class="card-title p-s txt-m" onkeypress="enter(event);" style="width: 100%; border: none"  />
+                <input id="text" type="text" class="card-title p-s txt-m" onkeypress="enter(event);" style="width: 100%; border: none" placeholder="说点什么吧" />
             </div>
         </div>
+    </div>
+    <div id="info-dialog">
+        <div>
+            <img src="http://wx.yingyutalk.com/weibar/Content/puff.svg" class="loading" alt="">
+        </div>
+        <div class="txt-m txt-c" id="info-text">
+            Loading...</div>
     </div>
 </div>

@@ -127,7 +127,10 @@
     <Content Include="Content\base.css" />
     <Content Include="Content\cards.css" />
     <Content Include="Content\flexible.js" />
+    <Content Include="Content\hammer.min.js" />
+    <Content Include="Content\iscroll.js" />
     <Content Include="Content\puff.svg" />
+    <Content Include="Content\overscroll.js" />
     <Content Include="Global.asax" />
     <Content Include="Web.config">
       <SubType>Designer</SubType>

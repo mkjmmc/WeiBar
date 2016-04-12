@@ -1,31 +1,63 @@
-﻿@using WeiBar.Model
+﻿@using WeiBar.BLL
+@using WeiBar.Model
 @using WeiBar.Web.Code
 @model dynamic
 @{
-    ViewBag.Title = "title";
+    ViewBag.Title = "微吧";
     Layout = "~/Views/Shared/_LayoutApp.cshtml";
-    //LoginHelper.UserLogin(new UserModel(){NickName = "lalala"});
+    //LoginHelper.UserLogin(UserHelper.GetModelByUserID("6c188a35-68c9-45f5-a5df-adfccc357daf"));
+}
+@section head
+{
+    <style>
+        html, body { width: 100%; height: 100%; overflow: hidden; }
+        .card-list { position: absolute; overflow: scroll; -webkit-overflow-scrolling: touch; top: 0; left: 0; bottom: 0; right: 0; }
+    </style>
+}
+@section scripts
+{
+    <script src="@Url.Content("~/Content/hammer.min.js")" type="text/javascript"></script>
+    <script src="@Url.Content("~/Content/overscroll.js")" type="text/javascript"></script>
+    <script>
+        $(function () {
+
+
+            var mc = new Hammer(document.body);
+
+            // listen to events...
+            mc.on("panleft panright panup pandown tap press", function (ev) {
+                $('#info').text(ev.type + " gesture detected.");
+                return false;
+            });
+        });
+
+
+        overscroll(document.querySelector('.card-list'));
+        
+    </script>
 }
 <div class="card-list">
     <div class="p-s txt-c  txt-lg">
-        <input type="search" class="button-pill txt-c p-xs txt-m" placeholder="输入名字直接进吧" style="border: none; width: 100%"/>
+        <input type="search" class="button-pill txt-c p-xs txt-m" placeholder="输入名字直接进吧" style="border: none; width: 100%" />
     </div>
     <div class="card-table">
-        <a class="card-list-item p-m txt-lg" href="@Url.Action("Index", "Bar", new {id = "微吧"})">微吧 <i class="fa fa-chevron-right"></i></a>
-        <a class="card-list-item p-m txt-lg" href="@Url.Action("Index", "Bar", new {id = "操作指南"})">操作指南 <i class="fa fa-chevron-right"></i></a>
+        <a class="card-list-item p-m txt-lg" href="@Url.Action("Index", "Bar", new { id = "微吧" })">微吧 <i class="fa fa-chevron-right"></i></a>
+        <a class="card-list-item p-m txt-lg" href="@Url.Action("Index", "Bar", new { id = "操作指南" })">操作指南 <i class="fa fa-chevron-right"></i></a>
     </div>
     <div class="p-l-m m-t-m m-b-xs txt-m">
         热门
     </div>
     <div class="card-table">
-        <a class="card-list-item p-m txt-lg" href="@Url.Action("Index", "Bar", new {id = "papi酱"})">papi酱 <i class="fa fa-chevron-right"></i></a>
-        <a class="card-list-item p-m txt-lg" href="@Url.Action("Index", "Bar", new {id = "IPhone"})">IPhone <i class="fa fa-chevron-right"></i></a>
+        <a class="card-list-item p-m txt-lg" href="@Url.Action("Index", "Bar", new { id = "papi酱" })">papi酱 <i class="fa fa-chevron-right"></i></a>
+        <a class="card-list-item p-m txt-lg" href="@Url.Action("Index", "Bar", new { id = "IPhone" })">IPhone <i class="fa fa-chevron-right"></i></a>
+    </div>
+    <h2>
+        title</h2>
+    UserID:@LoginHelper.LoginUser.UserID
+    <br />
+    NickName:@LoginHelper.LoginUser.NickName
+    <br />
+    LoginKey:@LoginHelper.LoginUser.LoginKey
+    <div id="info">
     </div>
 </div>
-<h2>
-    title</h2>
-UserID:@LoginHelper.LoginUser.UserID
-<br />
-NickName:@LoginHelper.LoginUser.NickName
-<br />
-LoginKey:@LoginHelper.LoginUser.LoginKey
