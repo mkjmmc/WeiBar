@@ -1,0 +1,140 @@
+﻿@using WeiBar.BLL
+@using WeiBar.Web.Code
+@model WeiBar.Model.BarModel
+@{
+    ViewBag.Title = Model.Name;
+    Layout = "~/Views/Shared/_LayoutApp.cshtml";
+    LoginHelper.UserLogin(UserHelper.GetModelByUserID("6c188a35-68c9-45f5-a5df-adfccc357daf"));
+}
+@section scripts
+{
+    <script type="text/javascript">
+
+        var barname = '@Model.Name';
+        $(function() {
+            connect();
+        });
+
+        function connect() {
+            // todo 显示正在连接服务器
+            var address = 'ws://127.0.0.1:8080'; // 'ws://112.124.7.227:8080';
+            ws = new WebSocket(address);
+            ws.onopen = function(e) {
+                $('#info').text("Server > connection open.");
+                // 注册用户进吧
+                joinroom();
+                //                var msg = document.createElement('div');
+                //                msg.style.color = '#0f0';
+                //                msg.innerHTML = "Server > connection open.";
+                //                msgContainer.appendChild(msg);
+                //                ws.send('{<' + document.getElementById('name').value + '>}');
+            };
+            ws.onmessage = function(e) {
+                // $('#info').text(e.data);
+                var message = e.data;
+                if (message.length > 0) {
+                    // 有消息过来，进行解析
+                    var obj = JSON.parse(message);
+                    switch (obj.action) {
+                    case 'joinroomsuccess':
+                        $('#info').text("Server > join room success.");
+                        break;
+                    case 'joinroom':
+                        $('#message').append('<div>' + obj.data.un + '加入了房间</div>');
+                        break;
+                    case 'newmessage':
+                        $('#message').append('<div>' + obj.data.un + ':' + obj.data.msg + '</div>');
+                        break;
+                    default:
+                        break;
+                    }
+                    if (obj.bar == '@Model.ID') {
+                        $('#message').append('<div>' + obj.un + ':' + obj.msg + '</div>');
+                    }
+                }
+                //                var msg = document.createElement('div');
+                //                msg.style.color = '#fff';
+                //                msg.innerHTML = e.data;
+                //                msgContainer.appendChild(msg);
+            };
+            ws.onerror = function(e) {
+                $('#info').text('Server > ' + e.data);
+                //                var msg = document.createElement('div');
+                //                msg.style.color = '#0f0';
+                //                msg.innerHTML = 'Server > ' + e.data;
+                //                msgContainer.appendChild(msg);
+            };
+            ws.onclose = function(e) {
+                $('#info').text("Server > connection closed by server.");
+                //                alert('connection closed by server.');
+                //                var msg = document.createElement('div');
+                //                msg.style.color = '#0f0';
+                //                msg.innerHTML = "Server > connection closed by server.";
+                //                msgContainer.appendChild(msg);
+            };
+            $('#text').focus();
+        }
+
+        function quit() {
+            if (ws) {
+                ws.close();
+                $('#info').text('Server > connection closed.');
+                //                var msg = document.createElement('div');
+                //                msg.style.color = '#0f0';
+                //                msg.innerHTML = 'Server > connection closed.';
+                //                msgContainer.appendChild(msg);
+                ws = null;
+            }
+        }
+
+        function wssend(act, obj) {
+            ws.send(JSON.stringify({
+                action: act,
+                data: obj
+            }));
+        }
+
+        // 加入房间
+        function joinroom() {
+            wssend('joinroom', {
+                ui: '@LoginHelper.LoginUser.UserID',
+                un: '@LoginHelper.LoginUser.NickName',
+                bar: '@Model.ID',
+            });
+        }
+
+        // 发送消息
+        function sendmessage(msg) {
+            wssend('sendmessage', {
+                ui: '@LoginHelper.LoginUser.UserID',
+                un: '@LoginHelper.LoginUser.NickName',
+                bar: '@Model.ID',
+                msg: msg
+            });
+        }
+
+        function send() {
+            var msg = $('#text').val();
+            if (msg.length > 0 && msg.length < 500) {
+                sendmessage($('#text').val());
+                $('#text').val('').focus();
+            }
+        }
+
+        function enter(event) {
+            if (event.keyCode == 13) {
+                send();
+            }
+        }
+    </script>
+}
+<div id="info">
+</div>
+<div id="message">
+</div>
+<div class="">
+    <input id="text" type="text" onkeypress="enter(event);" style="width: 340px" />
+    &nbsp;&nbsp;
+    <button id="send" onclick="send();">
+        send</button>
+</div>

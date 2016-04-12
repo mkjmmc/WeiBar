@@ -1,0 +1,29 @@
+﻿<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8">
+    <meta content="yes" name="apple-mobile-web-app-capable">
+    <meta content="yes" name="apple-touch-fullscreen">
+    <meta content="telephone=no,email=no" name="format-detection">
+    <script src="http://g.tbcdn.cn/mtb/lib-flexible/0.3.4/??flexible_css.js,flexible.js"></script>
+    <link href="http://frame.yingyutalk.com/font-awesome/4.3.0/css/font-awesome.min.css" rel="stylesheet" type="text/css" />
+    <link href="http://frame.yingyutalk.com/buttons/buttons.css" rel="stylesheet">
+    <link href="http://frame.yingyutalk.com/switchery/0.8.1/dist/switchery.min.css" rel="stylesheet">
+    <link href="@Url.Content("~/Content/base.css")" rel="stylesheet" type="text/css"/>
+    <link href="@Url.Content("~/Content/cards.css")" rel="stylesheet" type="text/css"/>
+    @RenderSection("head", required: false)
+    <title>@ViewBag.Title</title>
+</head>
+<body>
+    @RenderBody()
+    <script type="text/javascript" src="http://frame.yingyutalk.com/jquery/jquery-1.10.2.min.js"></script>
+    @RenderSection("scripts", required: false)
+   @* <script type="text/javascript" src="http://frame.yingyutalk.com/fastclick/fastclick.js"></script>
+    <script>
+        $(function () {
+            FastClick.attach(document.body);
+        })
+    
+    </script>*@
+</body>
+</html>

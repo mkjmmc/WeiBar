@@ -1,0 +1,31 @@
+﻿@using WeiBar.Model
+@using WeiBar.Web.Code
+@model dynamic
+@{
+    ViewBag.Title = "title";
+    Layout = "~/Views/Shared/_LayoutApp.cshtml";
+    //LoginHelper.UserLogin(new UserModel(){NickName = "lalala"});
+}
+<div class="card-list">
+    <div class="p-s txt-c  txt-lg">
+        <input type="search" class="button-pill txt-c p-xs txt-m" placeholder="输入名字直接进吧" style="border: none; width: 100%"/>
+    </div>
+    <div class="card-table">
+        <a class="card-list-item p-m txt-lg" href="@Url.Action("Index", "Bar", new {id = "微吧"})">微吧 <i class="fa fa-chevron-right"></i></a>
+        <a class="card-list-item p-m txt-lg" href="@Url.Action("Index", "Bar", new {id = "操作指南"})">操作指南 <i class="fa fa-chevron-right"></i></a>
+    </div>
+    <div class="p-l-m m-t-m m-b-xs txt-m">
+        热门
+    </div>
+    <div class="card-table">
+        <a class="card-list-item p-m txt-lg" href="@Url.Action("Index", "Bar", new {id = "papi酱"})">papi酱 <i class="fa fa-chevron-right"></i></a>
+        <a class="card-list-item p-m txt-lg" href="@Url.Action("Index", "Bar", new {id = "IPhone"})">IPhone <i class="fa fa-chevron-right"></i></a>
+    </div>
+</div>
+<h2>
+    title</h2>
+UserID:@LoginHelper.LoginUser.UserID
+<br />
+NickName:@LoginHelper.LoginUser.NickName
+<br />
+LoginKey:@LoginHelper.LoginUser.LoginKey

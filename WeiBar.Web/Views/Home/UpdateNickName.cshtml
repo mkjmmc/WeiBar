@@ -1,0 +1,43 @@
+﻿@model WeiBar.Model.UserModel
+@{
+    ViewBag.Title = "请设置昵称";
+    Layout = "~/Views/Shared/_LayoutApp.cshtml";
+}
+@using (Html.BeginForm())
+{
+    <div class="card-list">
+        <div class="txt-lg m-l m-b-s" style="margin-top: 4rem;">
+            <h2>
+                取一个闪亮闪亮的名字吧</h2>
+        </div>
+        <div class="card-table">
+            <div class="card-list-item">
+                <input type="text" name="NickName" id="NickName" class="card-title p-l txt-xl" style="display: block; border: none;" />
+                <div class="card-icon-right p-l-xl" onclick="getrndname()">
+                    <i class="fa fa-refresh"></i>
+                </div>
+            </div>
+        </div>
+        <div class="txt-c m-t-l">
+            <input type="submit" value="立即进入" class="button button-large button-primary button-pill" /></div>
+    </div>
+}
+@section scripts
+{
+    <script>
+        var pre = '歌唱,健谈,知足,纯情,耐性,不死,顺从,风筝,稳重,浮躁,梦中,多情,沉著,纯洁,忍让,平和,狡猾,健硕,害羞,拘谨,强力,博爱,散漫,驰骋,耿直,依赖,豪迈,顽固,闪耀,武断,轻松,友善,畏缩,沉静,古老,闷棍,果断,暴怒,傲慢,倔强,脆弱,急躁,乐观,爽朗,豪放,勇敢,温柔,体贴,妩媚,乖巧,活泼,轻狂,内向,外向,可爱,无聊,兴奋,漂亮,自信,腼腆,团结,文静,整齐,尊敬,端庄,标致,甜美,优秀,健壮,典雅,潇洒,美丽,豁达,积极,专注,快乐,勤奋,坚强,英俊,小巧,开朗,大方,冷静,理智'.split(',');
+        var nex = '赌神,神灵,护卫,谜团,熊猫,修玛,丧尸,狗头人,亡灵,小丑,铁须,影歌,赞达拉,双头龙,守望者,风元素,巨魔,冰龙,勇士,护卫,游侠,黑兽人,小丑,血吼,虚空,月骑,火元素,多头龙,丧尸,看守,暗矛,狼人,凤凰,祖达克,国王'.split(',');
+
+        function getrndname() {
+            $('#NickName').val(getrnd(pre) + '的' + getrnd(nex));
+        }
+
+        function getrnd(arr) {
+            var rnd = Math.random();
+            return arr[Math.round(rnd * (arr.length-1))];
+        }
+        $(function () {
+            getrndname();
+        });
+    </script>
+}
