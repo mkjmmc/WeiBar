@@ -59,6 +59,14 @@
       <Project>{BD2C7022-70BA-4E77-B392-9E29875CDD02}</Project>
       <Name>CommonLIB</Name>
     </ProjectReference>
+    <ProjectReference Include="..\WeiBar.BLL\WeiBar.BLL.csproj">
+      <Project>{398C88F9-BE08-4E7C-BBC5-A52CD093D5AF}</Project>
+      <Name>WeiBar.BLL</Name>
+    </ProjectReference>
+    <ProjectReference Include="..\WeiBar.Model\WeiBar.Model.csproj">
+      <Project>{A9CE8135-0BB7-4498-A717-0D25A352018D}</Project>
+      <Name>WeiBar.Model</Name>
+    </ProjectReference>
   </ItemGroup>
   <ItemGroup>
     <None Include="App.config" />

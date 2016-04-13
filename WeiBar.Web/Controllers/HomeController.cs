@@ -9,7 +9,7 @@ using WeiBar.Web.Code;
 
 namespace WeiBar.Web.Controllers
 {
-    [AuthorizationFilter]
+    //[AuthorizationFilter]
     public class HomeController : BaseController
     {
         public ActionResult Index()

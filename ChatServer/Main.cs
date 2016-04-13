@@ -11,6 +11,8 @@ using System.Threading;
 using CommonLIB.Network.HTTP;
 using CommonLIB.Network.TCP.Server;
 using PeiduiServer;
+using WeiBar.BLL;
+using WeiBar.Model;
 
 namespace ChatServer
 {
@@ -23,6 +25,7 @@ namespace ChatServer
         private static Dictionary<string, RoomInfo> roomPool = new Dictionary<string, RoomInfo>();
         private static List<SocketMessage> msgPool = new List<SocketMessage>();
         private static bool isClear = true;
+        private static Logger logger;
 
         /// <summary>
         /// 用于进行锁
@@ -33,10 +36,14 @@ namespace ChatServer
         {
             listenIP = System.Configuration.ConfigurationManager.AppSettings["ListenIP"];
             listenPort = System.Configuration.ConfigurationManager.AppSettings["ListenPort"];
+            logger = new Logger();
+            logger.LogEvents = true;
+
             StartListen();
             Console.WriteLine("Server is ready");
             Console.ReadLine();
             Broadcast();
+
         }
         public static void StartListen()
         {
@@ -80,12 +87,11 @@ namespace ChatServer
                             Thread.Sleep(10);
                         }
                     }
-                    catch (Exception)
+                    catch (Exception e)
                     {
-                        
+                        logger.Log(e.ToString());
                         throw;
                     }
-                   
                 }
             });
 
@@ -115,7 +121,7 @@ namespace ChatServer
                         {
                             Id = SocketServerBase.Socket.RemoteEndPoint,
                             handle = SocketServerBase.Socket.Handle,
-                            buffer = Data,
+                            //buffer = Data,
                         });
                     }
                     else if (SocketServerBase.Type == SocketTcpServer.接收成功)
@@ -143,6 +149,23 @@ namespace ChatServer
                         {
                             switch (action.action)
                             {
+                                case "login":
+                                    {
+                                        // 用户登录
+                                        var joinroommodel =
+                                            SerializeUtility.JavaScriptDeserialize<ActionModel<LoginModel>>(msg);
+                                        clientPool[client].NickName = joinroommodel.data.un;
+                                        clientPool[client].UserID = joinroommodel.data.ui;
+
+                                        // 返回登录成功消息
+                                        SendMessage(client, SerializeUtility.JavaScriptSerialize(
+                                            new ActionModel<object>()
+                                            {
+                                                action = "loginsuccess",
+                                                data = new {}
+                                            }));
+                                        break;
+                                    }
                                 case "joinroom":
                                     {
                                         // 加入房间，向当前用户发送加入成功消息
@@ -151,55 +174,62 @@ namespace ChatServer
                                         // 获取房间信息
                                         roomPool.TryAdd(joinroommodel.data.bar, new RoomInfo() { ID = joinroommodel.data.bar });
                                         roomPool[joinroommodel.data.bar].UserList.AddOrPeplace(client, clientPool[client]);
+
+                                        clientPool[client].Bar = joinroommodel.data.bar;
                                         // 返回房间加入成功消息
-                                        var msg1 = PackageServerData(
-                                            SerializeUtility.JavaScriptSerialize(
+                                        SendMessage(client, SerializeUtility.JavaScriptSerialize(
                                                 new ActionModel<object>()
                                                 {
                                                     action = "joinroomsuccess",
                                                     data = new { }
                                                 }));
-                                        client.Send(
-                                            msg1
-                                            , msg1.Length
-                                            , SocketFlags.None);
-                                        clientPool[client].Bar = joinroommodel.data.bar;
-                                        // 加入广播消息
-                                        msgPool.Add(new SocketMessage()
+
+                                        var actmodel = new ActionModel<object>()
                                         {
-                                            RoomID = joinroommodel.data.bar,
-                                            Message = SerializeUtility.JavaScriptSerialize(new ActionModel<object>()
+                                            action = "joinroom",
+                                            data = new
                                             {
-                                                action = "joinroom",
-                                                data = new
-                                                {
-                                                    ui = joinroommodel.data.ui,
-                                                    un = joinroommodel.data.un,
-                                                }
-                                            }),
+                                                ui = joinroommodel.data.ui,
+                                                un = joinroommodel.data.un,
+                                            }
+                                        };
+                                        // 保存至数据库
+                                        BarMessageHelper.Add(new BarMessageModel()
+                                        {
+                                            BarID = long.Parse(joinroommodel.data.bar),
+                                            Content = SerializeUtility.JavaScriptSerialize(actmodel),
+                                            CreateTime = GetTimeMilliseconds(DateTime.Now),
+                                            UserID = joinroommodel.data.ui,
+                                            Type = EnumBarMessageType.系统消息
                                         });
-                                        isClear = false;
+
+                                        AddToMsgPool(joinroommodel.data.bar, actmodel);
+
                                         break;
                                     }
                                 case "sendmessage":
                                     {
                                         var messagemodel = SerializeUtility.JavaScriptDeserialize<ActionModel<MessageModel>>(msg);
-                                        // 加入广播消息
-                                        msgPool.Add(new SocketMessage()
+                                        // 保存至数据库
+                                        BarMessageHelper.Add(new BarMessageModel()
                                         {
-                                            RoomID = messagemodel.data.bar,
-                                            Message = SerializeUtility.JavaScriptSerialize(new ActionModel<object>()
-                                            {
-                                                action = "newmessage",
-                                                data = new
-                                                {
-                                                    ui = messagemodel.data.ui,
-                                                    un = messagemodel.data.un,
-                                                    msg = messagemodel.data.msg,
-                                                }
-                                            }),
+                                            BarID = long.Parse(messagemodel.data.bar),
+                                            Content = messagemodel.data.msg,
+                                            CreateTime = GetTimeMilliseconds(DateTime.Now),
+                                            UserID = messagemodel.data.ui,
+                                            Type = EnumBarMessageType.文字消息
                                         });
-                                        isClear = false;
+
+                                        AddToMsgPool(messagemodel.data.bar, new ActionModel<object>()
+                                        {
+                                            action = "newmessage",
+                                            data = new
+                                            {
+                                                ui = messagemodel.data.ui,
+                                                un = messagemodel.data.un,
+                                                msg = messagemodel.data.msg,
+                                            }
+                                        });
                                         break;
                                     }
                             }
@@ -209,86 +239,101 @@ namespace ChatServer
                     }
                     else if (SocketServerBase.Type == SocketTcpServer.断开连接)
                     {
+                        string bar = "", un = "", ui = "";
                         if (clientPool.ContainsKey(SocketServerBase.Socket) && !string.IsNullOrWhiteSpace(clientPool[SocketServerBase.Socket].Bar))
                         {
+                            bar = clientPool[SocketServerBase.Socket].Bar;
+                            un = clientPool[SocketServerBase.Socket].NickName;
+                            ui = clientPool[SocketServerBase.Socket].UserID;
                             roomPool[clientPool[SocketServerBase.Socket].Bar].UserList.Remove(SocketServerBase.Socket);
                         }
                         clientPool.Remove(SocketServerBase.Socket);
+                        if (!string.IsNullOrWhiteSpace(bar) && !string.IsNullOrWhiteSpace(ui))
+                        {
+                            ActionLeftRoom(bar, ui, un);
+                        }
                     }
                     else if (SocketServerBase.Type == SocketTcpServer.连接超时)
                     {
+                        string bar = "", un = "", ui = "";
                         if (clientPool.ContainsKey(SocketServerBase.Socket) && !string.IsNullOrWhiteSpace(clientPool[SocketServerBase.Socket].Bar))
                         {
+                            bar = clientPool[SocketServerBase.Socket].Bar;
+                            un = clientPool[SocketServerBase.Socket].NickName;
+                            ui = clientPool[SocketServerBase.Socket].UserID;
                             roomPool[clientPool[SocketServerBase.Socket].Bar].UserList.Remove(SocketServerBase.Socket);
                         }
                         clientPool.Remove(SocketServerBase.Socket);
+                        if (!string.IsNullOrWhiteSpace(bar) && !string.IsNullOrWhiteSpace(ui))
+                        {
+                            ActionLeftRoom(bar, ui, un);
+                        }
                     }
                 }
-                //if (SocketServerBase.Type == SocketTcpServer.接收成功)
-                //{
-                //    //HashTableXml xml = new HashTableXml(Data);
-                //    //string cmd = (string)xml["CMD"];
-                //    //switch (cmd)
-                //    //{
-                //    //    case "TeacherOnline":
-                //    //        // 教师上线
-                //    //        TeacherOnline(SocketServerBase, (string)xml["UserID"], (string)xml["NickName"], (int)xml["Sex"], (string)xml["Photo"]);
-                //    //        break;
-                //    //    case "TeacherOffline":
-                //    //        // 教师下线
-                //    //        TeacherOffline(SocketServerBase);
-                //    //        break;
-                //    //    case "UserPair":
-                //    //        // 用户请求
-                //    //        UserPair(SocketServerBase, (string)xml["UserID"], (string)xml["NickName"], (int)xml["Sex"], (string)xml["Photo"], (string)xml["voipAccount"]);
-                //    //        break;
-                //    //    case "UserPairEnd":
-                //    //        // 用户取消请求
-                //    //        UserPairEnd(SocketServerBase);
-                //    //        break;
-                //    //    case "TeacherAgree":
-                //    //        // 教师接受订单
-                //    //        TeacherAgree(SocketServerBase, (string)xml["UserID"]);
-                //    //        break;
-                //    //}
-                //}
-                //else if (SocketServerBase.Type == SocketTcpServer.断开连接)
-                //{
-                //    // 用户处理
-                //    UserPairEnd(SocketServerBase);
-
-                //    // 教师处理
-                //    lock (lockDictionary)
-                //    {
-                //        if (SocketTeacher.ContainsKey(SocketServerBase.Socket))
-                //        {
-                //            // 教师断开，删除教师信息，删除教师的相关订单
-                //            var id = SocketTeacher[SocketServerBase.Socket];
-                //            teacherinfo.Remove(id);
-                //            dicordersinfo.Remove(id);
-                //            SocketTeacher.Remove(SocketServerBase.Socket);
-
-                //            // 向服务器发送下线消息
-                //            ThreadPool.QueueUserWorkItem(SendWaitStat, new object[] { id, 1 });
-                //        }
-                //    }
-                //}
-                //else if (SocketServerBase.Type == SocketTcpServer.连接超时)
-                //{
-
-                //}
-                //else if (SocketServerBase.Type == SocketTcpServer.连接成功)
-                //{
-
-                //}
 
             }
-            catch
+            catch (Exception e)
             {
-                
+                logger.Log(e.ToString());
             }
         }
 
+        /// <summary>
+        /// 发送消息到客户端
+        /// </summary>
+        /// <param name="client"></param>
+        /// <param name="message"></param>
+        public static void SendMessage(Socket client, string message)
+        {
+            var buffer = PackageServerData(message);
+            client.Send(buffer, buffer.Length, SocketFlags.None);
+        }
+
+        /// <summary>
+        /// 离开房间事件
+        /// </summary>
+        /// <param name="bar"></param>
+        /// <param name="ui"></param>
+        /// <param name="un"></param>
+        public static void ActionLeftRoom(string bar, string ui, string un)
+        {
+            var msg = new ActionModel<object>()
+            {
+                action = "leftroom",
+                data = new
+                {
+                    ui = ui,
+                    un = un,
+                }
+            };
+            // 保存至数据库
+            BarMessageHelper.Add(new BarMessageModel()
+            {
+                BarID = long.Parse(bar),
+                Content = SerializeUtility.JavaScriptSerialize(msg),
+                CreateTime = GetTimeMilliseconds(DateTime.Now),
+                UserID = ui,
+                Type = EnumBarMessageType.系统消息
+            });
+            AddToMsgPool(bar, msg);
+        }
+
+        /// <summary>
+        /// 加入广播消息
+        /// </summary>
+        /// <returns></returns>
+        public static void AddToMsgPool(string bar, object message)
+        {
+            // 加入广播消息
+            msgPool.Add(new SocketMessage()
+            {
+                RoomID = bar,
+                Message = SerializeUtility.JavaScriptSerialize(message),
+            });
+            isClear = false;
+        }
+
+        #region 数据处理协议
         /// <summary>
         /// 打包服务器握手数据
         /// </summary>
@@ -351,8 +396,6 @@ namespace ChatServer
 
             return content;
         }
-
-
         /// <summary>
         /// 解析客户端发送来的数据
         /// </summary>
@@ -423,6 +466,8 @@ namespace ChatServer
             return Encoding.UTF8.GetString(payload_data);
         }
 
+        #endregion
+
         #region 将时间转换成毫秒数
         /// <summary>
         /// 将时间转换成毫秒数
@@ -439,32 +484,15 @@ namespace ChatServer
 
     public class ClientInfo
     {
-        public byte[] buffer;
-
+        public string Bar { get; set; }
         public string NickName { get; set; }
+        public string UserID { get; set; }
 
         public EndPoint Id { get; set; }
-
         public IntPtr handle { get; set; }
-
-        public string Name
-        {
-            get
-            {
-                if (!string.IsNullOrEmpty(NickName))
-                {
-                    return NickName;
-                }
-                else
-                {
-                    return string.Format("{0}#{1}", Id, handle);
-                }
-            }
-        }
 
         public bool IsHandShaked { get; set; }
 
-        public  string Bar { get; set; }
     }
     public class SocketMessage
     {
@@ -484,5 +512,24 @@ namespace ChatServer
         public string ID { get; set; }
         public string Name { get; set; }
         public Dictionary<Socket, ClientInfo> UserList { get; set; }
+    }
+
+    public class Logger
+    {
+        public bool LogEvents { get; set; }
+
+        public Logger()
+        {
+            LogEvents = true;
+        }
+
+        public void Log(string Text)
+        {
+            if (LogEvents)
+            {
+                Console.WriteLine(Text);
+                //todo 写日志
+            }
+        }
     }
 }

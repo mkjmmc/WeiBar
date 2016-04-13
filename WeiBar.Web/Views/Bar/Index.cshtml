@@ -4,7 +4,7 @@
 @{
     ViewBag.Title = Model.Name;
     Layout = "~/Views/Shared/_LayoutApp.cshtml";
-    //LoginHelper.UserLogin(UserHelper.GetModelByUserID("6c188a35-68c9-45f5-a5df-adfccc357daf"));
+    LoginHelper.UserLogin(UserHelper.GetModelByUserID("6c188a35-68c9-45f5-a5df-adfccc357daf"));
 }
 @section head
 {
@@ -15,10 +15,9 @@
         .messagebar { position: absolute; bottom: 0; left: 0; right: 0; height: 1rem; border-top: solid 1px #DEDFE0; border-bottom: solid 1px #DEDFE0; }
         .chatItemListcontainer { position: absolute; top: 0; bottom: 1rem; left: 0; right: 0; overflow: hidden; z-index: 1; }
         .chatItemList { position: absolute; z-index: 1; -webkit-tap-highlight-color: rgba(0,0,0,0); width: 100%; -webkit-transform: translateZ(0); -moz-transform: translateZ(0); -ms-transform: translateZ(0); -o-transform: translateZ(0); transform: translateZ(0); -webkit-touch-callout: none; -webkit-user-select: none; -moz-user-select: none; -ms-user-select: none; user-select: none; -webkit-text-size-adjust: none; -moz-text-size-adjust: none; -ms-text-size-adjust: none; -o-text-size-adjust: none; text-size-adjust: none; }
-        .chatItemList { padding-top: .2rem;padding-bottom: .2rem;  }
-        .chatItemList .chatItem { margin: 0 .2rem; line-height: 1.2; font-size: .4rem; word-break: break-all; }
+        .chatItemList { padding-top: .2rem; padding-bottom: .2rem; }
+        .chatItemList .chatItem { margin: 0 .2rem; line-height: 1.2; font-size: .48rem; word-break: break-all; }
         #info { position: absolute; top: 0; }
-        
     </style>
 }
 @section scripts
@@ -35,7 +34,7 @@
             myScroll = new IScroll('.chatItemListcontainer', { mouseWheel: true });
         });
         document.addEventListener('touchmove', function (e) { e.preventDefault(); }, false);
-  </script>
+    </script>
     <script src="@Url.Content("~/Content/hammer.min.js")" type="text/javascript"></script>
     <script>
         $(function () {
@@ -58,7 +57,7 @@
     <script type="text/javascript">
 
         var barname = '@Model.Name';
-        $(function() {
+        $(function () {
             connect();
         });
         function connect() {
@@ -74,42 +73,48 @@
                 content: $('#info-dialog')
             });
             $('#info-text').text('正在连接服务器');
-            var address = 'ws://112.124.7.227:8080';
+            //            var address = 'ws://112.124.7.227:8080';
+            var address = 'ws://127.0.0.1:8080';
             ws = new WebSocket(address);
-            ws.onopen = function(e) {
+            ws.onopen = function (e) {
                 $('#info').text("Server > connection open.");
                 // 注册用户进吧
                 $('#info-text').text('加入房间中');
-                joinroom();
+                login();
+
                 //                var msg = document.createElement('div');
                 //                msg.style.color = '#0f0';
                 //                msg.innerHTML = "Server > connection open.";
                 //                msgContainer.appendChild(msg);
                 //                ws.send('{<' + document.getElementById('name').value + '>}');
             };
-            ws.onmessage = function(e) {
+            ws.onmessage = function (e) {
                 // $('#info').text(e.data);
                 var message = e.data;
                 if (message.length > 0) {
                     // 有消息过来，进行解析
                     var obj = JSON.parse(message);
                     switch (obj.action) {
-                    case 'joinroomsuccess':
-                        $('#info').text("Server > join room success.");
-                        layer.closeAll();
-//                        setTimeout(function (){layer.closeAll()}, 1000);
-                        break;
-                    case 'joinroom':
-                        $('#message').append('<div class="chatItem"><a href="#">' + obj.data.un + '</a>加入了房间</div>');
-                        break;
-                    case 'newmessage':
-                        $('#message').append('<div class="chatItem"><a href="#">' + obj.data.un + '</a>:' + obj.data.msg + '</div>');
-                        break;
-                    default:
-                        break;
+                        case 'loginsuccess':
+                            joinroom();
+                            //                        setTimeout(function (){layer.closeAll()}, 1000);
+                            break;
+                        case 'joinroomsuccess':
+                            $('#info').text("Server > join room success.");
+                            layer.closeAll();
+                            //                        setTimeout(function (){layer.closeAll()}, 1000);
+                            break;
+                        case 'joinroom':
+                            $('#message').append('<div class="chatItem"><a href="#">' + obj.data.un + '</a>加入了房间</div>');
+                            break;
+                        case 'newmessage':
+                            $('#message').append('<div class="chatItem"><a href="#">' + obj.data.un + '</a>:' + obj.data.msg + '</div>');
+                            break;
+                        default:
+                            break;
                     }
-//                    $('.chatItemListcontainer').animate({ scrollTop: $('#message').height() }, 300);
-                    setTimeout(function() {
+                    //                    $('.chatItemListcontainer').animate({ scrollTop: $('#message').height() }, 300);
+                    setTimeout(function () {
                         myScroll.refresh();
                         myScroll.scrollToElement($('.chatItem:last')[0], 500, null, null, IScroll.utils.ease.circular);
                     }, 0);
@@ -119,16 +124,16 @@
                 //                msg.innerHTML = e.data;
                 //                msgContainer.appendChild(msg);
             };
-            ws.onerror = function(e) {
+            ws.onerror = function (e) {
                 $('#info').text('Server > ' + e.data);
-//                $('#info-text').text('连接中断，正在重试');
-//                setTimeout(connect, 1000);
-//                //                var msg = document.createElement('div');
+                //                $('#info-text').text('连接中断，正在重试');
+                //                setTimeout(connect, 1000);
+                //                //                var msg = document.createElement('div');
                 //                msg.style.color = '#0f0';
                 //                msg.innerHTML = 'Server > ' + e.data;
                 //                msgContainer.appendChild(msg);
             };
-            ws.onclose = function(e) {
+            ws.onclose = function (e) {
                 $('#info').text("Server > connection closed by server.");
                 $('#info-text').text('连接中断，正在重试');
                 setTimeout(connect, 3000);
@@ -160,12 +165,20 @@
             }));
         }
 
+        // 用户登录
+        function login() {
+            wssend('login', {
+                ui: '@LoginHelper.LoginUser.UserID',
+                un: '@LoginHelper.LoginUser.NickName'
+            });
+        }
+
         // 加入房间
         function joinroom() {
             wssend('joinroom', {
                 ui: '@LoginHelper.LoginUser.UserID',
                 un: '@LoginHelper.LoginUser.NickName',
-                bar: '@Model.ID',
+                bar: '@Model.ID'
             });
         }
 
@@ -198,8 +211,8 @@
     <div id="info">
     </div>
     <div class="chatItemListcontainer">
-            <div id="message" class="chatItemList">
-            </div>
+        <div id="message" class="chatItemList">
+        </div>
     </div>
     <div class="messagebar">
         <div class="card-list">

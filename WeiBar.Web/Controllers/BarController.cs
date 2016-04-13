@@ -5,7 +5,7 @@ using WeiBar.Web.Code;
 
 namespace WeiBar.Web.Controllers
 {
-    [AuthorizationFilter]
+    //[AuthorizationFilter]
     public class BarController : BaseController
     {
         public ActionResult Index(string id)
