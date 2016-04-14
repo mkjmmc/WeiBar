@@ -9,15 +9,22 @@
 @section head
 {
     <style>
-        html, body { background-color: #FFFFFF; width: 100%; height: 100%; }
+        html, body { background-color: #FFFFFF; width: 100%; height: 100%; overflow: hidden; }
         body .loadingcontainer { box-shadow: none; color: #fff; text-align: center; background-color: #000; opacity: 0.8; filter: alpha(opacity=80); -webkit-animation-name: none; animation-name: none; border-radius: .5rem; }
         .loading { width: 2rem; height: 2rem; margin: .5rem; }
         .messagebar { position: absolute; bottom: 0; left: 0; right: 0; height: 1rem; border-top: solid 1px #DEDFE0; border-bottom: solid 1px #DEDFE0; }
         .chatItemListcontainer { position: absolute; top: 0; bottom: 1rem; left: 0; right: 0; overflow: hidden; z-index: 1; }
-        .chatItemList { position: absolute; z-index: 1; -webkit-tap-highlight-color: rgba(0,0,0,0); width: 100%; -webkit-transform: translateZ(0); -moz-transform: translateZ(0); -ms-transform: translateZ(0); -o-transform: translateZ(0); transform: translateZ(0); -webkit-touch-callout: none; -webkit-user-select: none; -moz-user-select: none; -ms-user-select: none; user-select: none; -webkit-text-size-adjust: none; -moz-text-size-adjust: none; -ms-text-size-adjust: none; -o-text-size-adjust: none; text-size-adjust: none; }
+        .chatItemList { position: absolute; z-index: 1; -webkit-tap-highlight-color: rgba(0, 0, 0, 0); width: 100%; -webkit-transform: translateZ(0); -moz-transform: translateZ(0); -ms-transform: translateZ(0); -o-transform: translateZ(0); transform: translateZ(0); -webkit-touch-callout: none; -webkit-user-select: none; -moz-user-select: none; -ms-user-select: none; user-select: none; -webkit-text-size-adjust: none; -moz-text-size-adjust: none; -ms-text-size-adjust: none; -o-text-size-adjust: none; text-size-adjust: none; }
         .chatItemList { padding-top: .2rem; padding-bottom: .2rem; }
         .chatItemList .chatItem { margin: 0 .2rem; line-height: 1.2; font-size: .48rem; word-break: break-all; }
         #info { position: absolute; top: 0; }
+        #sidebar { position: absolute; right: -2rem; width: 2rem; height: 100%; background-color: #000000; z-index: 10; opacity: 0.5; filter: alpha(opacity=50); }
+        .color-r{ color: red;}
+        .color-g{ color: green;}
+        .color-b{ color: blue;}
+        .color-k{ color: black;}
+        .color-y{ color: yellow;}
+        .color-w{ color: white;}
     </style>
 }
 @section scripts
@@ -30,36 +37,55 @@
     </script>*@
     <script src="@Url.Content("~/Content/iscroll.js")" type="text/javascript"></script>
     <script>
-        $(function () {
+        $(function() {
             myScroll = new IScroll('.chatItemListcontainer', { mouseWheel: true });
         });
-        document.addEventListener('touchmove', function (e) { e.preventDefault(); }, false);
+        document.addEventListener('touchmove', function(e) { e.preventDefault(); }, false);
     </script>
     <script src="@Url.Content("~/Content/hammer.min.js")" type="text/javascript"></script>
     <script>
-        $(function () {
-            var mc = new Hammer(document.body);
+        $(function() {
+            var mc = new Hammer(document.body, { domEvents: true });
             // listen to events...
-            mc.on("panleft panright panup pandown tap press", function (ev) {
+            mc.on("panleft panright panup pandown tap press swipeleft", function(ev) {
                 $('#info').text(ev.type + " gesture detected.");
-                return false;
+                //                switch (ev.type) {
+                //                    case "panleft":
+                //                        $('#sidebar').animate({ right: '-=100px' }, 600, 'easeOutQuint', function() {});
+                //                default:
+                //                }
+                //return false;
+            });
+            $(document.body).on({
+                "swipeleft": function(e) {
+                    $('#sidebar').animate({ right: '0' }, 600, 'easeOutQuint', function() {});
+                },
+                "swiperight": function(e) {
+                    $('#sidebar').animate({ right: '-2rem' }, 600, 'easeOutQuint', function() {});
+                },
+                "tap": function(e) {
+                    $('#sidebar').animate({ right: '-2rem' }, 600, 'easeOutQuint', function() {});
+                }
             });
         });
     </script>
     <script type="text/javascript" src="http://frame.yingyutalk.com/layer/1.9.3/layer.js"></script>
     <script>
-        $(function () {
+        $(function() {
             layer.config({
                 //extend: ['skin/moon/style.css'] //加载新皮肤
+            
             });
         })
     </script>
     <script type="text/javascript">
 
         var barname = '@Model.Name';
-        $(function () {
+        $(function() {
+            getmessagelist();
             connect();
         });
+
         function connect() {
             layer.closeAll();
             layer.open({
@@ -76,7 +102,7 @@
             //            var address = 'ws://112.124.7.227:8080';
             var address = 'ws://127.0.0.1:8080';
             ws = new WebSocket(address);
-            ws.onopen = function (e) {
+            ws.onopen = function(e) {
                 $('#info').text("Server > connection open.");
                 // 注册用户进吧
                 $('#info-text').text('加入房间中');
@@ -88,33 +114,33 @@
                 //                msgContainer.appendChild(msg);
                 //                ws.send('{<' + document.getElementById('name').value + '>}');
             };
-            ws.onmessage = function (e) {
+            ws.onmessage = function(e) {
                 // $('#info').text(e.data);
                 var message = e.data;
                 if (message.length > 0) {
                     // 有消息过来，进行解析
                     var obj = JSON.parse(message);
                     switch (obj.action) {
-                        case 'loginsuccess':
-                            joinroom();
-                            //                        setTimeout(function (){layer.closeAll()}, 1000);
-                            break;
-                        case 'joinroomsuccess':
-                            $('#info').text("Server > join room success.");
-                            layer.closeAll();
-                            //                        setTimeout(function (){layer.closeAll()}, 1000);
-                            break;
-                        case 'joinroom':
-                            $('#message').append('<div class="chatItem"><a href="#">' + obj.data.un + '</a>加入了房间</div>');
-                            break;
-                        case 'newmessage':
-                            $('#message').append('<div class="chatItem"><a href="#">' + obj.data.un + '</a>:' + obj.data.msg + '</div>');
-                            break;
-                        default:
-                            break;
+                    case 'loginsuccess':
+                        joinroom();
+                        //                        setTimeout(function (){layer.closeAll()}, 1000);
+                        break;
+                    case 'joinroomsuccess':
+                        $('#info').text("Server > join room success.");
+                        layer.closeAll();
+                        //                        setTimeout(function (){layer.closeAll()}, 1000);
+                        break;
+                    case 'joinroom':
+                        $('#message').append('<div class="chatItem"><a href="#">' + obj.data.un + '</a>加入了房间</div>');
+                        break;
+                    case 'newmessage':
+                        insertmessage(obj.data);
+                        break;
+                    default:
+                        break;
                     }
                     //                    $('.chatItemListcontainer').animate({ scrollTop: $('#message').height() }, 300);
-                    setTimeout(function () {
+                    setTimeout(function() {
                         myScroll.refresh();
                         myScroll.scrollToElement($('.chatItem:last')[0], 500, null, null, IScroll.utils.ease.circular);
                     }, 0);
@@ -124,7 +150,7 @@
                 //                msg.innerHTML = e.data;
                 //                msgContainer.appendChild(msg);
             };
-            ws.onerror = function (e) {
+            ws.onerror = function(e) {
                 $('#info').text('Server > ' + e.data);
                 //                $('#info-text').text('连接中断，正在重试');
                 //                setTimeout(connect, 1000);
@@ -133,7 +159,7 @@
                 //                msg.innerHTML = 'Server > ' + e.data;
                 //                msgContainer.appendChild(msg);
             };
-            ws.onclose = function (e) {
+            ws.onclose = function(e) {
                 $('#info').text("Server > connection closed by server.");
                 $('#info-text').text('连接中断，正在重试');
                 setTimeout(connect, 3000);
@@ -205,6 +231,78 @@
                 send();
             }
         }
+
+        function insertmessage(data) {
+            var item = $('<div class="chatItem"><a href="#">' + HTMLEncode(data.un) + '</a>:' + HTMLEncode(data.msg) + '</div>');
+            $('#message').append(item);
+            // 幽灵图标：“👻”
+            twemoji.parse(item[0], { size: 36 });
+        }
+
+        function getmessagelist(parameters) {
+            $.ajax({
+                url: "@(Url.Action("GetMessageList"))",
+                type: "POST",
+                dataType: "json",
+                data: { id: '@Model.ID' },
+                success: function(data) {
+                    if (data.length > 0) {
+                        $.each(data, function(index, message) {
+                            // 进行解析
+                            var obj = JSON.parse(message.Content);
+                            switch (obj.action) {
+                            case 'newmessage':
+                                insertmessage(obj.data);
+                                break;
+                            default:
+                                break;
+                            }
+                        });
+                    }
+                },
+                complete: function() {
+//                        $this.data('loading', false);
+//                        $this.text('点击加载更多');
+                }
+
+            });
+        }
+
+        function HTMLEncode(html) {
+            var temp = document.createElement("div");
+            (temp.textContent != null) ? (temp.textContent = html) : (temp.innerText = html);
+            var output = temp.innerHTML;
+            temp = null;
+            // 字体色彩处理
+            output = Color(output);
+            return output;
+        }
+
+        function Color(text) {
+            // 字体色彩处理
+            var reg = /#([RGBKYW])([^#]+)|#(c)([\dabcdef]{6}\s)([^#]+)/ig;
+            return text.replace(reg, function($1, $2, $3, $4, $5, $6) {
+                if ($2) {
+                    return '<span class="color-' + $2.toLowerCase() + '">' + $3 + '</span>';
+                } else if($4) {
+                    return '<span style="color:#' + $5.toLowerCase() + '">' + $6 + '</span>';
+                } else {
+                    return $1;
+                }
+            });
+//            var arrMactches = text.match(reg);
+//            if (arrMactches!= null) {
+//                
+//                for (var i = 0; i < arrMactches.length; i++) {
+//                    alert(arrMactches[i]); //Cat  cat
+//                }
+//            }
+        }
+
+
+        function htmlDecodeJQ(str) {
+            return $('').html(str).text();
+        }
     </script>
 }
 <div class="card-list">
@@ -227,5 +325,13 @@
         </div>
         <div class="txt-m txt-c" id="info-text">
             Loading...</div>
+    </div>
+</div>
+<div id="sidebar">
+    <div>
+        <a>关注</a>
+    </div>
+    <div style="font-size: 2rem;">
+        <a class="button button-large button-plain button-border button-box" style="font-size: 1.5rem; width: inherit; height: inherit"><i class="fa fa-sign-out" aria-hidden="true"></i></a>
     </div>
 </div>

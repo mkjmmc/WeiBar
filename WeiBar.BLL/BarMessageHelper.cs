@@ -1,3 +1,5 @@
+using System.Collections.Generic;
+using System.Linq;
 using MySql.Data.MySqlClient;
 using WeiBar.Model;
 
@@ -37,6 +39,25 @@ values
             };
             var _rows = DbHelperMySqlForWeiBar.ExecuteSql(sql, _parameter);
             return _rows > 0;
+        }
+
+        /// <summary>
+        /// 获取列表
+        /// </summary>
+        /// <returns></returns>
+        public static List<BarMessageModel> GetList(long BarID)
+        {
+            string sql = @"
+select * from bar_message 
+where BarID=@BarID and Type=1
+order by MessageID desc
+limit 50;
+";
+            MySqlParameter[] _parameter = {
+                new MySqlParameter("@BarID", MySqlDbType.Int64) {Value = BarID},
+            };
+            var _ds = DbHelperMySqlForWeiBar.Query(sql, _parameter);
+            return CollectionHelper.ConvertTo<BarMessageModel>(_ds.Tables[0]).ToList();
         }
     }
 }

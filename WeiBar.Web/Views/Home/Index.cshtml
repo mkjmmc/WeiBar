@@ -20,20 +20,14 @@
     <script src="@Url.Content("~/Content/overscroll.js")" type="text/javascript"></script>
     <script>
         $(function () {
-
-
             var mc = new Hammer(document.body);
-
             // listen to events...
             mc.on("panleft panright panup pandown tap press", function (ev) {
                 $('#info').text(ev.type + " gesture detected.");
                 return false;
             });
         });
-
-
         overscroll(document.querySelector('.card-list'));
-        
     </script>
 }
 <div class="card-list">

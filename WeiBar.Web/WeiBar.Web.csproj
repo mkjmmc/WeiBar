@@ -129,6 +129,7 @@
     <Content Include="Content\flexible.js" />
     <Content Include="Content\hammer.min.js" />
     <Content Include="Content\iscroll.js" />
+    <Content Include="Content\jquery.easing.min.js" />
     <Content Include="Content\puff.svg" />
     <Content Include="Content\overscroll.js" />
     <Content Include="Global.asax" />

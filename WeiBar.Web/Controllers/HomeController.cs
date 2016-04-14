@@ -9,13 +9,17 @@ using WeiBar.Web.Code;
 
 namespace WeiBar.Web.Controllers
 {
-    //[AuthorizationFilter]
+    [AuthorizationFilter]
     public class HomeController : BaseController
     {
         public ActionResult Index()
         {
             return View();
         }
+
+
+        // todo 关注，取消关注
+        //public 
 
         [HttpGet]
         public ActionResult UpdateNickName()

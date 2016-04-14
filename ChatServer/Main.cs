@@ -64,7 +64,7 @@ namespace ChatServer
                     {
                         if (!isClear)
                         {
-                            byte[] msg = PackageServerData(msgPool[0].Message);
+                            byte[] buffer = PackageServerData(msgPool[0].Message);
                             var room = roomPool[msgPool[0].RoomID];
                             foreach (KeyValuePair<Socket, ClientInfo> cs in room.UserList)
                             {
@@ -74,10 +74,7 @@ namespace ChatServer
                                     continue;
                                 }
                                 Socket client = cs.Key;
-                                if (client.Poll(10, SelectMode.SelectWrite))
-                                {
-                                    client.Send(msg, msg.Length, SocketFlags.None);
-                                }
+                                SendMessage(client, buffer);
                             }
                             msgPool.RemoveAt(0);
                             isClear = msgPool.Count == 0 ? true : false;
@@ -143,98 +140,8 @@ namespace ChatServer
                         {
                             return;
                         }
-                        // 数据解析
-                        var action = SerializeUtility.JavaScriptDeserialize<ActionModel<object>>(msg);
-                        if (action != null)
-                        {
-                            switch (action.action)
-                            {
-                                case "login":
-                                    {
-                                        // 用户登录
-                                        var joinroommodel =
-                                            SerializeUtility.JavaScriptDeserialize<ActionModel<LoginModel>>(msg);
-                                        clientPool[client].NickName = joinroommodel.data.un;
-                                        clientPool[client].UserID = joinroommodel.data.ui;
 
-                                        // 返回登录成功消息
-                                        SendMessage(client, SerializeUtility.JavaScriptSerialize(
-                                            new ActionModel<object>()
-                                            {
-                                                action = "loginsuccess",
-                                                data = new {}
-                                            }));
-                                        break;
-                                    }
-                                case "joinroom":
-                                    {
-                                        // 加入房间，向当前用户发送加入成功消息
-                                        var joinroommodel =
-                                            SerializeUtility.JavaScriptDeserialize<ActionModel<JoinRoomModel>>(msg);
-                                        // 获取房间信息
-                                        roomPool.TryAdd(joinroommodel.data.bar, new RoomInfo() { ID = joinroommodel.data.bar });
-                                        roomPool[joinroommodel.data.bar].UserList.AddOrPeplace(client, clientPool[client]);
-
-                                        clientPool[client].Bar = joinroommodel.data.bar;
-                                        // 返回房间加入成功消息
-                                        SendMessage(client, SerializeUtility.JavaScriptSerialize(
-                                                new ActionModel<object>()
-                                                {
-                                                    action = "joinroomsuccess",
-                                                    data = new { }
-                                                }));
-
-                                        var actmodel = new ActionModel<object>()
-                                        {
-                                            action = "joinroom",
-                                            data = new
-                                            {
-                                                ui = joinroommodel.data.ui,
-                                                un = joinroommodel.data.un,
-                                            }
-                                        };
-                                        // 保存至数据库
-                                        BarMessageHelper.Add(new BarMessageModel()
-                                        {
-                                            BarID = long.Parse(joinroommodel.data.bar),
-                                            Content = SerializeUtility.JavaScriptSerialize(actmodel),
-                                            CreateTime = GetTimeMilliseconds(DateTime.Now),
-                                            UserID = joinroommodel.data.ui,
-                                            Type = EnumBarMessageType.系统消息
-                                        });
-
-                                        AddToMsgPool(joinroommodel.data.bar, actmodel);
-
-                                        break;
-                                    }
-                                case "sendmessage":
-                                    {
-                                        var messagemodel = SerializeUtility.JavaScriptDeserialize<ActionModel<MessageModel>>(msg);
-                                        // 保存至数据库
-                                        BarMessageHelper.Add(new BarMessageModel()
-                                        {
-                                            BarID = long.Parse(messagemodel.data.bar),
-                                            Content = messagemodel.data.msg,
-                                            CreateTime = GetTimeMilliseconds(DateTime.Now),
-                                            UserID = messagemodel.data.ui,
-                                            Type = EnumBarMessageType.文字消息
-                                        });
-
-                                        AddToMsgPool(messagemodel.data.bar, new ActionModel<object>()
-                                        {
-                                            action = "newmessage",
-                                            data = new
-                                            {
-                                                ui = messagemodel.data.ui,
-                                                un = messagemodel.data.un,
-                                                msg = messagemodel.data.msg,
-                                            }
-                                        });
-                                        break;
-                                    }
-                            }
-                        }
-
+                        DealMessage(msg, client);
 
                     }
                     else if (SocketServerBase.Type == SocketTcpServer.断开连接)
@@ -278,6 +185,9 @@ namespace ChatServer
             }
         }
 
+
+        #region 发送消息到客户端
+        
         /// <summary>
         /// 发送消息到客户端
         /// </summary>
@@ -286,9 +196,123 @@ namespace ChatServer
         public static void SendMessage(Socket client, string message)
         {
             var buffer = PackageServerData(message);
-            client.Send(buffer, buffer.Length, SocketFlags.None);
+            SendMessage(client, buffer);
         }
 
+        /// <summary>
+        /// 发送消息到客户端
+        /// </summary>
+        /// <param name="client"></param>
+        /// <param name="message"></param>
+        public static void SendMessage(Socket client, byte[] buffer)
+        {
+            if (client.Poll(10, SelectMode.SelectWrite))
+            {
+                client.Send(buffer, buffer.Length, SocketFlags.None);
+            }
+        }
+        #endregion
+
+        #region 消息处理
+
+        public static void DealMessage(string message, Socket client)
+        {
+            // 数据解析
+            var action = SerializeUtility.JavaScriptDeserialize<ActionModel<object>>(message);
+            if (action != null)
+            {
+                switch (action.action)
+                {
+                    case "login":
+                        {
+                            // 用户登录
+                            var joinroommodel =
+                                SerializeUtility.JavaScriptDeserialize<ActionModel<LoginModel>>(message);
+                            clientPool[client].NickName = joinroommodel.data.un;
+                            clientPool[client].UserID = joinroommodel.data.ui;
+
+                            // 返回登录成功消息
+                            SendMessage(client, SerializeUtility.JavaScriptSerialize(
+                                new ActionModel<object>()
+                                {
+                                    action = "loginsuccess",
+                                    data = new { }
+                                }));
+                            break;
+                        }
+                    case "joinroom":
+                        {
+                            // 加入房间，向当前用户发送加入成功消息
+                            var joinroommodel =
+                                SerializeUtility.JavaScriptDeserialize<ActionModel<JoinRoomModel>>(message);
+                            // 获取房间信息
+                            roomPool.TryAdd(joinroommodel.data.bar, new RoomInfo() { ID = joinroommodel.data.bar });
+                            roomPool[joinroommodel.data.bar].UserList.AddOrPeplace(client, clientPool[client]);
+
+                            clientPool[client].Bar = joinroommodel.data.bar;
+                            // 返回房间加入成功消息
+                            SendMessage(client, SerializeUtility.JavaScriptSerialize(
+                                    new ActionModel<object>()
+                                    {
+                                        action = "joinroomsuccess",
+                                        data = new { }
+                                    }));
+
+                            var actmodel = new ActionModel<object>()
+                            {
+                                action = "joinroom",
+                                data = new
+                                {
+                                    ui = joinroommodel.data.ui,
+                                    un = joinroommodel.data.un,
+                                }
+                            };
+                            // 保存至数据库
+                            BarMessageHelper.Add(new BarMessageModel()
+                            {
+                                BarID = long.Parse(joinroommodel.data.bar),
+                                Content = SerializeUtility.JavaScriptSerialize(actmodel),
+                                CreateTime = GetTimeMilliseconds(DateTime.Now),
+                                UserID = joinroommodel.data.ui,
+                                Type = EnumBarMessageType.系统消息
+                            });
+
+                            AddToMsgPool(joinroommodel.data.bar, actmodel);
+
+                            break;
+                        }
+                    case "sendmessage":
+                        {
+                            var messagemodel = SerializeUtility.JavaScriptDeserialize<ActionModel<MessageModel>>(message);
+                            var actmodel = new ActionModel<object>()
+                            {
+                                action = "newmessage",
+                                data = new
+                                {
+                                    ui = messagemodel.data.ui,
+                                    un = messagemodel.data.un,
+                                    msg = messagemodel.data.msg,
+                                }
+                            };
+                            // 保存至数据库
+                            BarMessageHelper.Add(new BarMessageModel()
+                            {
+                                BarID = long.Parse(messagemodel.data.bar),
+                                Content = SerializeUtility.JavaScriptSerialize(actmodel),
+                                CreateTime = GetTimeMilliseconds(DateTime.Now),
+                                UserID = messagemodel.data.ui,
+                                Type = EnumBarMessageType.文字消息
+                            });
+
+                            AddToMsgPool(messagemodel.data.bar, actmodel);
+                            break;
+                        }
+                }
+            }
+        }
+
+        #endregion
+        #region 离开房间事件
         /// <summary>
         /// 离开房间事件
         /// </summary>
@@ -317,6 +341,8 @@ namespace ChatServer
             });
             AddToMsgPool(bar, msg);
         }
+
+        #endregion
 
         /// <summary>
         /// 加入广播消息
