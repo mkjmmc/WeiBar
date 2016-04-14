@@ -11,6 +11,7 @@ using System.Net;
 using System.Text;
 using System.Web;
 using System.Web.Mvc;
+using WeiBar.BLL;
 using WeiBar.Web.Models;
 
 namespace WeiBar.Web.Code
@@ -27,6 +28,15 @@ namespace WeiBar.Web.Code
         /// <param name="filterContext">The filter context.</param>
         public override void OnActionExecuting(ActionExecutingContext filterContext)
         {
+            if (ConfigSetting.isDebug)
+            {
+                if (!LoginHelper.IsLogin())
+                {
+                    LoginHelper.UserLogin(UserHelper.GetModelByUserID("6c188a35-68c9-45f5-a5df-adfccc357daf"));
+                }
+                base.OnActionExecuting(filterContext);
+                return;
+            }
             if (filterContext.HttpContext.Request.UserAgent.ToLower().Contains("micromessenger"))
             {
                 #region 微信登陆验证

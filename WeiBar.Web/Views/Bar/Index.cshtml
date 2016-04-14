@@ -1,30 +1,61 @@
-﻿@using WeiBar.BLL
+﻿@using BuTian.Utility
+@using WeiBar.BLL
+@using WeiBar.Model
 @using WeiBar.Web.Code
 @model WeiBar.Model.BarModel
 @{
     ViewBag.Title = Model.Name;
     Layout = "~/Views/Shared/_LayoutApp.cshtml";
-    LoginHelper.UserLogin(UserHelper.GetModelByUserID("6c188a35-68c9-45f5-a5df-adfccc357daf"));
+    //LoginHelper.UserLogin(UserHelper.GetModelByUserID("6c188a35-68c9-45f5-a5df-adfccc357daf"));
+    // 判断登录用户在当前吧的状态
+    var info = UserBarHelper.GetModel(LoginHelper.LoginUser.UserID, Model.ID);
+    if (info == null)
+    {
+        info = new UserBarModel()
+        {
+            BarID = Model.ID,
+            CreateTime = DateTimeUtility.GetTimeMilliseconds(DateTime.Now),
+            IsFollow = 0,
+            UserID = LoginHelper.LoginUser.UserID,
+        };
+        UserBarHelper.Add(info);
+    }
 }
 @section head
 {
     <style>
-        html, body { background-color: #FFFFFF; width: 100%; height: 100%; overflow: hidden; }
-        body .loadingcontainer { box-shadow: none; color: #fff; text-align: center; background-color: #000; opacity: 0.8; filter: alpha(opacity=80); -webkit-animation-name: none; animation-name: none; border-radius: .5rem; }
-        .loading { width: 2rem; height: 2rem; margin: .5rem; }
-        .messagebar { position: absolute; bottom: 0; left: 0; right: 0; height: 1rem; border-top: solid 1px #DEDFE0; border-bottom: solid 1px #DEDFE0; }
-        .chatItemListcontainer { position: absolute; top: 0; bottom: 1rem; left: 0; right: 0; overflow: hidden; z-index: 1; }
-        .chatItemList { position: absolute; z-index: 1; -webkit-tap-highlight-color: rgba(0, 0, 0, 0); width: 100%; -webkit-transform: translateZ(0); -moz-transform: translateZ(0); -ms-transform: translateZ(0); -o-transform: translateZ(0); transform: translateZ(0); -webkit-touch-callout: none; -webkit-user-select: none; -moz-user-select: none; -ms-user-select: none; user-select: none; -webkit-text-size-adjust: none; -moz-text-size-adjust: none; -ms-text-size-adjust: none; -o-text-size-adjust: none; text-size-adjust: none; }
-        .chatItemList { padding-top: .2rem; padding-bottom: .2rem; }
-        .chatItemList .chatItem { margin: 0 .2rem; line-height: 1.2; font-size: .48rem; word-break: break-all; }
+        html, body {background-color: #FFFFFF;width: 100%;height: 100%;overflow: hidden; }
+        a, a:hover, a:active, a:visited { text-decoration: none; }
+        body .loadingcontainer {box-shadow: none;color: #fff;text-align: center;background-color: #000;opacity: 0.8;filter: alpha(opacity=80);-webkit-animation-name: none;animation-name: none;border-radius: .5rem; }
+        .loading {width: 2rem;height: 2rem;margin: .5rem; }
+        .messagebar {position: absolute;bottom: 0;left: 0;right: 0;height: 1rem;border-top: solid 1px #DEDFE0;border-bottom: solid 1px #DEDFE0; }
+        .chatItemListcontainer {position: absolute;top: 0;bottom: 1rem;left: 0;right: 0;overflow: hidden;z-index: 1; }
+        .chatItemList {position: absolute;z-index: 1;-webkit-tap-highlight-color: rgba(0, 0, 0, 0);width: 100%;-webkit-transform: translateZ(0);-moz-transform: translateZ(0);-ms-transform: translateZ(0);-o-transform: translateZ(0);transform: translateZ(0);-webkit-touch-callout: none;-webkit-user-select: none;-moz-user-select: none;-ms-user-select: none;user-select: none;-webkit-text-size-adjust: none;-moz-text-size-adjust: none;-ms-text-size-adjust: none;-o-text-size-adjust: none;text-size-adjust: none; }
+        .chatItemList {padding-top: .2rem;padding-bottom: .2rem; }
+        .chatItemList .chatItem {margin: 0 .2rem;line-height: 1.2;font-size: .48rem;word-break: break-all; }
+
+        .mode2 { overflow: hidden; }
+        .mode2 .chatItem {float: left;width: 100%;margin-top: .24rem; }
+        .mode2 .chatItem .chatphoto {display: block; width: 100%;text-align: left}
+        .mode2 .chatItem .chatcontent{ float: left;display: block;padding: .2rem .3rem;border: solid 1px #AFAFAF;box-shadow: 0px 1px 0px #D5D5D5;border-radius: .1rem;background-color: #ECECEC; min-height: 20px;min-width: .5rem; max-width: 7rem; word-wrap: break-word;  }
+        .mode2 .chatItem .chatsqre{display: none}
+        
+        .mode2 .chatItem.me {float: right}
+        .mode2 .chatItem.me .chatphoto {text-align: right; display: none;}
+        .mode2 .chatItem.me .chatcontent{ float: right;border: solid 1px #7AA23F;box-shadow: 0px 1px 0px #D5D5D5;background-color: #B2CF73; }
+
+        
         #info { position: absolute; top: 0; }
-        #sidebar { position: absolute; right: -2rem; width: 2rem; height: 100%; background-color: #000000; z-index: 10; opacity: 0.5; filter: alpha(opacity=50); }
-        .color-r{ color: red;}
-        .color-g{ color: green;}
-        .color-b{ color: blue;}
-        .color-k{ color: black;}
-        .color-y{ color: yellow;}
-        .color-w{ color: white;}
+        #sidebar { position: absolute; right: -4rem; width: 4rem; height: 100%; background-color: #000000; z-index: 10; opacity: 0.9; filter: alpha(opacity=90); font-size: .48rem; color: #FFFFFF; }
+        #sidebar a { color: #FFFFFF; }
+        #sidebar .fa{ margin-right: .24rem;}
+        #sidebar .card-list-item { padding: .48rem;border-color: #333333; }
+        .color-r { color: red; }
+        .color-g { color: green; }
+        .color-b { color: blue; }
+        .color-k { color: black; }
+        .color-y { color: yellow; }
+        .color-w { color: white; }
     </style>
 }
 @section scripts
@@ -37,17 +68,17 @@
     </script>*@
     <script src="@Url.Content("~/Content/iscroll.js")" type="text/javascript"></script>
     <script>
-        $(function() {
+        $(function () {
             myScroll = new IScroll('.chatItemListcontainer', { mouseWheel: true });
         });
-        document.addEventListener('touchmove', function(e) { e.preventDefault(); }, false);
+        document.addEventListener('touchmove', function (e) { e.preventDefault(); }, false);
     </script>
     <script src="@Url.Content("~/Content/hammer.min.js")" type="text/javascript"></script>
     <script>
-        $(function() {
+        $(function () {
             var mc = new Hammer(document.body, { domEvents: true });
             // listen to events...
-            mc.on("panleft panright panup pandown tap press swipeleft", function(ev) {
+            mc.on("panleft panright panup pandown tap press swipeleft", function (ev) {
                 $('#info').text(ev.type + " gesture detected.");
                 //                switch (ev.type) {
                 //                    case "panleft":
@@ -57,24 +88,29 @@
                 //return false;
             });
             $(document.body).on({
-                "swipeleft": function(e) {
-                    $('#sidebar').animate({ right: '0' }, 600, 'easeOutQuint', function() {});
+                "swipeleft": function (e) {
+                    $('#sidebar').animate({ right: '0' }, 600, 'easeOutQuint', function () { });
                 },
-                "swiperight": function(e) {
-                    $('#sidebar').animate({ right: '-2rem' }, 600, 'easeOutQuint', function() {});
-                },
-                "tap": function(e) {
-                    $('#sidebar').animate({ right: '-2rem' }, 600, 'easeOutQuint', function() {});
+                "swiperight": function (e) {
+                    $('#sidebar').animate({ right: -$('#sidebar').width() }, 600, 'easeOutQuint', function () { });
+                }
+            });
+
+
+            //var mc2 = new Hammer($('.card-list')[0], { domEvents: true });
+            $('.card-list').on({
+                "tap": function (e) {
+                    $('#sidebar').animate({ right: -$('#sidebar').width() }, 600, 'easeOutQuint', function () { });
                 }
             });
         });
     </script>
     <script type="text/javascript" src="http://frame.yingyutalk.com/layer/1.9.3/layer.js"></script>
     <script>
-        $(function() {
+        $(function () {
             layer.config({
                 //extend: ['skin/moon/style.css'] //加载新皮肤
-            
+
             });
         })
     </script>
@@ -99,8 +135,8 @@
                 content: $('#info-dialog')
             });
             $('#info-text').text('正在连接服务器');
-            //            var address = 'ws://112.124.7.227:8080';
-            var address = 'ws://127.0.0.1:8080';
+            //var address = '@(ConfigSetting.isDebug ? "ws://127.0.0.1:8080" : "ws://112.124.7.227:8080")';
+            var address = 'ws://112.124.7.227:8080';
             ws = new WebSocket(address);
             ws.onopen = function(e) {
                 $('#info').text("Server > connection open.");
@@ -233,7 +269,8 @@
         }
 
         function insertmessage(data) {
-            var item = $('<div class="chatItem"><a href="#">' + HTMLEncode(data.un) + '</a>:' + HTMLEncode(data.msg) + '</div>');
+            var meclass = '@(LoginHelper.LoginUser.UserID)' == data.ui ? 'me' : '';
+            var item = $('<div class="chatItem '+meclass+'"><a href="#" class="chatphoto">' + HTMLEncode(data.un) + '</a><span class="chatsqre">:</span><span class="chatcontent">' + HTMLEncode(data.msg) + '</span></div>');
             $('#message').append(item);
             // 幽灵图标：“👻”
             twemoji.parse(item[0], { size: 36 });
@@ -303,6 +340,17 @@
         function htmlDecodeJQ(str) {
             return $('').html(str).text();
         }
+
+        // 设置显示模式
+        function setchatmode(mode) {
+            if (mode == 2) {
+                $('.chatItemListcontainer').addClass('mode2');
+            } else {
+                $('.chatItemListcontainer').removeClass('mode2');
+            }
+            myScroll.refresh();
+            $('.card-list').trigger('tap');
+        }
     </script>
 }
 <div class="card-list">
@@ -328,10 +376,39 @@
     </div>
 </div>
 <div id="sidebar">
-    <div>
-        <a>关注</a>
-    </div>
-    <div style="font-size: 2rem;">
-        <a class="button button-large button-plain button-border button-box" style="font-size: 1.5rem; width: inherit; height: inherit"><i class="fa fa-sign-out" aria-hidden="true"></i></a>
+    <a class="card-list-item">
+        <div>
+            <i class="fa fa-chevron-left" aria-hidden="true"></i>回首页
+        </div>
+    </a>
+    <a class="card-list-item" onclick="setchatmode(1)">
+        <div>
+            <i class="fa fa-list" aria-hidden="true"></i>文字模式
+        </div>
+    </a>
+    <a class="card-list-item" onclick="setchatmode(2)">
+        <div>
+            <i class="fa fa-comment-o" aria-hidden="true"></i>气泡模式
+        </div>
+    </a>
+    <a class="card-list-item">
+        <div>
+            <i class="fa fa-moon-o" aria-hidden="true"></i>夜间模式
+        </div>
+    </a>
+    <a class="card-list-item">
+        <div>
+            <i class="fa fa-share-alt" aria-hidden="true"></i>分享本吧
+        </div>
+    </a>
+    <div style="padding: .48rem; text-align: center;">
+        @if (info.IsFollow == 0)
+        {
+            <a class="button-primary button-pill" style="display: block; padding: .24rem;">立即关注</a>
+        }
+        else
+        {
+            <a class="button-border button-pill" style="display: block; padding: .24rem;">取消关注</a>
+        }
     </div>
 </div>

@@ -131,6 +131,8 @@ values
 ,@CreateTime
 ,@loginKey
 );
+
+-- 授权
 insert into authorize
 (UserID
 ,AuthID
@@ -140,6 +142,20 @@ values
 (@UserID
 ,@AuthID
 ,@Data
+);
+
+-- 关注官方的几个吧
+insert into user_bar
+(UserID
+,BarID
+,CreateTime
+,IsFollow
+)
+values
+(@UserID
+,1
+,@CreateTime
+,1
 );
 
 ";

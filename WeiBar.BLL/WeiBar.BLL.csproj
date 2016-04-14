@@ -51,6 +51,7 @@
     <Compile Include="CollectionHelper.cs" />
     <Compile Include="DbHelperMySql.cs" />
     <Compile Include="DbHelperMySqlForWeiBar.cs" />
+    <Compile Include="UserBarHelper.cs" />
     <Compile Include="UserHelper.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
   </ItemGroup>

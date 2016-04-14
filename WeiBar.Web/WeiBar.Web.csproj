@@ -112,6 +112,7 @@
     <Compile Include="Code\SerializeUtility.cs" />
     <Compile Include="Controllers\BarController.cs" />
     <Compile Include="Controllers\BaseController.cs" />
+    <Compile Include="Controllers\UserBarController.cs" />
     <Compile Include="Models\Oauth.cs" />
     <Compile Include="Controllers\HomeController.cs" />
     <Compile Include="Global.asax.cs">

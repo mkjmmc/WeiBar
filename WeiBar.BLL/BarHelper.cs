@@ -1,3 +1,5 @@
+using System.Collections.Generic;
+using System.Linq;
 using MySql.Data.MySqlClient;
 using WeiBar.Model;
 
@@ -24,6 +26,21 @@ select * from bar where Name=@Name limit 1;
             }
             return null;
         }
+        /// <summary>
+        /// 获取吧信息
+        /// </summary>
+        /// <returns></returns>
+        public static List<BarModel> GetList(long[] ids)
+        {
+            string sql = string.Format(@"
+select * from bar where ID in ({0});
+"
+                , string.Join(",", ids));
+            var _ds = DbHelperMySqlForWeiBar.Query(sql);
+            return CollectionHelper.ConvertTo<BarModel>(_ds.Tables[0]).ToList();
+        }
+
+
 
         /// <summary>
         /// 添加吧
